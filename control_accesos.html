@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Control de Accesos — Estancia Carabassa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#1F4655;
+    --teal:#2E5F73;
+    --olive:#8C966E;
+    --olive-dark:#6E7A56;
+    --cream:#F4F5EF;
+    --charcoal:#3C3C32;
+    --red:#B3413B;
+    --green:#4C7A4E;
+    --border:#DEDED2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--cream);
+    color:var(--charcoal);
+    padding-bottom:40px;
+  }
+  header{
+    background:var(--navy);
+    color:#fff;
+    padding:18px 16px 16px;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  header h1{
+    margin:0;
+    font-size:18px;
+    font-weight:700;
+  }
+  header p{
+    margin:2px 0 0;
+    font-size:12px;
+    color:#B9CBD3;
+  }
+  .tabs{
+    display:flex;
+    gap:8px;
+    margin:14px 16px 0;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    border:1px solid var(--border);
+    background:#fff;
+    cursor:pointer;
+  }
+  .tab.active{
+    background:var(--olive);
+    color:#fff;
+    border-color:var(--olive);
+  }
+  main{
+    padding:14px 16px 0;
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .field{
+    margin-bottom:12px;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--teal);
+    margin-bottom:4px;
+  }
+  .field input, .field select, .field textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:15px;
+    background:#fff;
+    color:var(--charcoal);
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .toggle-group{
+    display:flex;
+    gap:8px;
+  }
+  .toggle-opt{
+    flex:1;
+    text-align:center;
+    padding:9px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    background:#fafaf6;
+  }
+  .toggle-opt.si.active{ background:#E4EEE1; border-color:var(--green); color:var(--green); }
+  .toggle-opt.no.active{ background:#F6E4E2; border-color:var(--red); color:var(--red); }
+  .btn-primary{
+    width:100%;
+    padding:14px;
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:4px;
+  }
+  .btn-secondary{
+    width:100%;
+    padding:12px;
+    background:#fff;
+    color:var(--navy);
+    border:1px solid var(--navy);
+    border-radius:10px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    margin-bottom:10px;
+  }
+  .error{
+    color:var(--red);
+    font-size:12px;
+    margin-top:-6px;
+    margin-bottom:10px;
+    display:none;
+  }
+  .search{
+    margin-bottom:10px;
+  }
+  .entry{
+    border-bottom:1px solid var(--border);
+    padding:10px 0;
+    font-size:13px;
+  }
+  .entry:last-child{border-bottom:none;}
+  .entry-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:3px;
+  }
+  .entry-name{
+    font-weight:700;
+    font-size:14px;
+  }
+  .badge{
+    font-size:10px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:20px;
+  }
+  .badge.in{ background:#E4EEE1; color:var(--green); }
+  .badge.out{ background:#F0EAE0; color:var(--olive-dark); }
+  .entry-meta{
+    color:#77776B;
+    font-size:12px;
+  }
+  .entry-flags{
+    margin-top:4px;
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .flag{
+    font-size:10px;
+    padding:2px 7px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .flag.ok{ background:#E4EEE1; color:var(--green); }
+  .flag.warn{ background:#F6E4E2; color:var(--red); }
+  .del{
+    background:none;
+    border:none;
+    color:#B3413B;
+    font-size:12px;
+    cursor:pointer;
+    padding:4px 0 0;
+  }
+  .empty{
+    text-align:center;
+    color:#8C8C7E;
+    font-size:13px;
+    padding:20px 0;
+  }
+  .stats{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .stat{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px;
+    text-align:center;
+  }
+  .stat .n{
+    font-size:20px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .stat .l{
+    font-size:10px;
+    color:#77776B;
+    font-weight:600;
+  }
+  .toast{
+    position:fixed;
+    bottom:16px;
+    left:16px;
+    right:16px;
+    background:var(--charcoal);
+    color:#fff;
+    padding:12px;
+    border-radius:8px;
+    font-size:13px;
+    text-align:center;
+    display:none;
+    z-index:50;
+  }
+  .section-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--teal);
+    margin:0 0 8px;
+  }
+  .salida-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    border-bottom:1px solid var(--border);
+    padding:10px 0;
+  }
+  .salida-row:last-child{ border-bottom:none; }
+  .salida-info .n{
+    font-weight:700;
+    font-size:14px;
+  }
+  .salida-info .m{
+    color:#77776B;
+    font-size:12px;
+    margin-top:2px;
+  }
+  .btn-salida-item{
+    flex-shrink:0;
+    padding:9px 12px;
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .scan-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.82);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .scan-box{
+    background:#111;
+    border-radius:12px;
+    padding:16px;
+    width:100%;
+    max-width:360px;
+  }
+  .scan-title{
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+    margin:0 0 10px;
+    text-align:center;
+  }
+  #scan-video{
+    width:100%;
+    border-radius:8px;
+    background:#000;
+  }
+  .scan-hint{
+    color:#C9C9BE;
+    font-size:12px;
+    text-align:center;
+    margin:10px 0;
+  }
+  .grupo-switch{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#EFF0E7;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:12px;
+  }
+  .grupo-switch span{
+    font-size:13px;
+    font-weight:600;
+    color:var(--charcoal);
+  }
+  .grupo-switch input{
+    width:20px;
+    height:20px;
+  }
+  .grupo-panel{
+    display:none;
+    background:#E9EFE4;
+    border:1px solid var(--olive);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:14px;
+  }
+  .grupo-panel .titulo{
+    font-size:13px;
+    font-weight:700;
+    color:var(--olive-dark);
+    margin-bottom:4px;
+  }
+  .grupo-panel .lista-mini{
+    font-size:12px;
+    color:#5A5A50;
+    margin-top:4px;
+  }
+  .btn-finalizar-grupo{
+    width:100%;
+    padding:10px;
+    background:#fff;
+    color:var(--red);
+    border:1px solid var(--red);
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:8px;
+  }
+  .lock-overlay{
+    position:fixed;
+    inset:0;
+    background:var(--navy);
+    z-index:200;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .lock-box{
+    background:#fff;
+    border-radius:12px;
+    padding:24px 20px;
+    width:100%;
+    max-width:320px;
+    text-align:center;
+  }
+  .lock-box h2{
+    font-size:16px;
+    margin:0 0 4px;
+    color:var(--navy);
+  }
+  .lock-box p{
+    font-size:12px;
+    color:#77776B;
+    margin:0 0 16px;
+  }
+  .lock-box input{
+    width:100%;
+    padding:12px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:18px;
+    text-align:center;
+    letter-spacing:2px;
+    margin-bottom:10px;
+  }
+  .lock-error{
+    color:var(--red);
+    font-size:12px;
+    margin-bottom:10px;
+    display:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="lock-overlay" id="lock-overlay">
+  <div class="lock-box">
+    <h2>Control de Accesos</h2>
+    <p>Estancia Carabassa — ingresá el código de acceso</p>
+    <input type="password" id="lock-input" placeholder="Código" maxlength="12" autocomplete="off">
+    <p class="lock-error" id="lock-error">Código incorrecto. Probá de nuevo.</p>
+    <button class="btn-primary" id="btn-desbloquear">Ingresar</button>
+  </div>
+</div>
+
+<header>
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>Control de Accesos</h1>
+      <p>Estancia Carabassa — obras particulares</p>
+    </div>
+    <button id="btn-cerrar-sesion" style="background:none;border:1px solid #4A6E7C;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;">Cerrar sesión</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="entrada">Entrada</div>
+    <div class="tab" data-tab="salida">Salida</div>
+    <div class="tab" data-tab="listado">Listado</div>
+  </div>
+
+  <div id="view-registrar">
+    <div class="card">
+      <div class="grupo-switch">
+        <span>Visita grupal (varias personas, mismos datos)</span>
+        <input type="checkbox" id="chk-grupo">
+      </div>
+
+      <div class="grupo-panel" id="grupo-panel">
+        <div class="titulo">Carga rápida activa — <span id="grupo-contador">0</span> registradas</div>
+        <div>Completá los datos comunes una vez. Después escaneá un DNI tras otro: cada uno se guarda solo y la cámara se reabre sola para el siguiente.</div>
+        <div class="lista-mini" id="grupo-lista-mini"></div>
+        <button class="btn-finalizar-grupo" id="btn-finalizar-grupo" type="button">Finalizar carga grupal</button>
+      </div>
+
+      <button class="btn-secondary" id="btn-escanear" type="button">Escanear DNI</button>
+      <div class="error" id="err-scan" style="display:none;"></div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" id="f-nombre" placeholder="Juan">
+        </div>
+        <div class="field">
+          <label>Apellido</label>
+          <input type="text" id="f-apellido" placeholder="Pérez">
+        </div>
+      </div>
+      <div class="error" id="err-nombre">Completá nombre y apellido.</div>
+
+      <div class="row2">
+        <div class="field">
+          <label>DNI</label>
+          <input type="text" inputmode="numeric" id="f-dni" placeholder="30123456">
+        </div>
+        <div class="field">
+          <label>Lote / UF</label>
+          <input type="text" id="f-lote" placeholder="145">
+        </div>
+      </div>
+      <div class="error" id="err-lote">Indicá el lote de la obra.</div>
+
+      <div class="field">
+        <label>Empresa / Contratista</label>
+        <input type="text" id="f-empresa" placeholder="Constructora XX">
+      </div>
+
+      <div class="field">
+        <label>Categoría</label>
+        <select id="f-categoria">
+          <option>Personal de obra</option>
+          <option>Proveedor</option>
+          <option>Visita</option>
+          <option>Gremio</option>
+        </select>
+      </div>
+
+      <div class="field" id="wrap-motivo" style="display:none;">
+        <label>Motivo de la visita</label>
+        <select id="f-motivo">
+          <option value="ocasional">Visita ocasional</option>
+          <option value="deportivas">Uso de instalaciones deportivas</option>
+        </select>
+      </div>
+
+      <div class="field" id="wrap-instalacion" style="display:none;">
+        <label>Instalación</label>
+        <select id="f-instalacion">
+          <option>Fútbol sintético</option>
+          <option>Pádel 1</option>
+          <option>Pádel 2</option>
+          <option>Tenis</option>
+          <option>Club House</option>
+        </select>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Patente (opcional)</label>
+          <input type="text" id="f-patente" placeholder="AB123CD">
+        </div>
+        <div class="field">
+          <label>Vigencia de la autorización</label>
+          <select id="f-vigencia">
+            <option value="unica">Única vez</option>
+            <option value="hoy">Todo el día de hoy</option>
+            <option value="fecha">Hasta una fecha</option>
+            <option value="permanente">Personal permanente de obra</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" id="wrap-fecha-venc" style="display:none;">
+        <label>Autorizado hasta</label>
+        <input type="date" id="f-fecha-venc">
+      </div>
+
+      <div class="field">
+        <label>Seguro ART / RC vigente</label>
+        <div class="toggle-group">
+          <div class="toggle-opt si" data-group="seguro" data-val="si">Sí</div>
+          <div class="toggle-opt no" data-group="seguro" data-val="no">No</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Certificado de antecedentes presentado</label>
+        <div class="toggle-group">
+          <div class="toggle-opt si" data-group="antecedentes" data-val="si">Sí</div>
+          <div class="toggle-opt no" data-group="antecedentes" data-val="no">No</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Autoriza</label>
+        <input type="text" id="f-autoriza" placeholder="Nombre del propietario, Intendencia o designado">
+      </div>
+      <div class="error" id="err-autoriza">En un barrio privado, todo ingreso debe estar autorizado por un propietario, la Intendencia o quien estos designen.</div>
+
+      <div class="field">
+        <label>Observaciones</label>
+        <textarea id="f-obs" rows="2" placeholder="Opcional"></textarea>
+      </div>
+
+      <button class="btn-primary" id="btn-registrar">Registrar entrada</button>
+    </div>
+  </div>
+
+  <div id="view-salida" style="display:none;">
+    <div class="field search">
+      <input type="text" id="f-buscar-salida" placeholder="Buscar por nombre, DNI o lote">
+    </div>
+    <div class="card">
+      <p class="section-title">Adentro ahora</p>
+      <div id="lista-salida"></div>
+    </div>
+  </div>
+
+  <div id="view-listado" style="display:none;">
+    <button class="btn-secondary" id="btn-exportar"><span id="export-label">Descargar planilla Excel</span></button>
+    <div class="field search">
+      <input type="text" id="f-buscar" placeholder="Buscar por nombre, DNI o lote">
+    </div>
+    <div class="card">
+      <p class="section-title">Registros</p>
+      <div id="lista"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="scan-overlay" id="scan-overlay">
+  <div class="scan-box">
+    <p class="scan-title">Escaneá el código del dorso del DNI</p>
+    <video id="scan-video" autoplay playsinline muted></video>
+    <p class="scan-hint" id="scan-hint">Alineá el código de barras dentro del recuadro.</p>
+    <button class="btn-secondary" id="btn-cancelar-scan" type="button">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "control-accesos-log";
+let entries = [];
+let seguroVal = null;
+let antecedentesVal = null;
+
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(()=>{ t.style.display = "none"; }, 2200);
+}
+
+async function loadEntries(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    entries = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    entries = [];
+  }
+  renderStats();
+  renderList();
+}
+
+async function saveEntries(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }catch(e){
+    toast("No se pudo guardar el registro en este dispositivo.");
+  }
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.toLocaleDateString("es-AR");
+}
+
+function renderStats(){
+  const hoy = todayStr();
+  const hoyEntries = entries.filter(e => e.fechaCorta === hoy);
+  const adentro = entries.filter(e => !e.horaSalida).length;
+  const alertasAdentro = entries.filter(e => !e.horaSalida && (e.seguro === "no" || e.antecedentes === "no")).length;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><div class="n">${hoyEntries.length}</div><div class="l">Ingresos hoy</div></div>
+    <div class="stat"><div class="n">${adentro}</div><div class="l">Adentro ahora</div></div>
+    <div class="stat"><div class="n">${alertasAdentro}</div><div class="l">Con alertas</div></div>
+  `;
+}
+
+function renderList(){
+  const q = document.getElementById("f-buscar").value.trim().toLowerCase();
+  const list = document.getElementById("lista");
+  let filtered = entries.slice().reverse();
+  if(q){
+    filtered = filtered.filter(e =>
+      (e.nombre+" "+e.apellido).toLowerCase().includes(q) ||
+      (e.dni||"").includes(q) ||
+      (e.lote||"").toLowerCase().includes(q)
+    );
+  }
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty">No hay registros todavía.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(e => {
+    const flags = [];
+    flags.push(`<span class="flag ${e.seguro==='si'?'ok':'warn'}">Seguro: ${e.seguro==='si'?'Sí':'No'}</span>`);
+    flags.push(`<span class="flag ${e.antecedentes==='si'?'ok':'warn'}">Antecedentes: ${e.antecedentes==='si'?'Sí':'No'}</span>`);
+    const motivoLine = e.motivo ? `<div class="entry-meta">${escapeHtml(e.motivo)}${e.instalacion ? " — " + escapeHtml(e.instalacion) : ""}</div>` : "";
+    const vigenciaLine = e.vigencia ? `<div class="entry-meta">Vigencia: ${escapeHtml(e.vigencia)}${e.autorizadoHasta ? " (" + escapeHtml(e.autorizadoHasta) + ")" : ""} · Autoriza: ${escapeHtml(e.autoriza||'-')}</div>` : "";
+    const estaAdentro = !e.horaSalida;
+    return `
+      <div class="entry">
+        <div class="entry-top">
+          <span class="entry-name">${escapeHtml(e.nombre)} ${escapeHtml(e.apellido)}</span>
+          <span class="badge ${estaAdentro?'in':'out'}">${estaAdentro?'Adentro':'Salió'}</span>
+        </div>
+        <div class="entry-meta">DNI ${escapeHtml(e.dni||'-')} · Lote ${escapeHtml(e.lote||'-')} · ${escapeHtml(e.categoria)}</div>
+        <div class="entry-meta">Ingreso: ${escapeHtml(e.fecha)}${e.horaSalida ? " · Salida: " + escapeHtml(e.horaSalida) : ""}</div>
+        <div class="entry-meta">${escapeHtml(e.empresa||'')}</div>
+        ${motivoLine}
+        ${vigenciaLine}
+        <div class="entry-flags">${flags.join("")}</div>
+        <button class="del" data-id="${e.id}">Eliminar registro</button>
+      </div>
+    `;
+  }).join("");
+  list.querySelectorAll(".del").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const id = btn.getAttribute("data-id");
+      entries = entries.filter(e => e.id !== id);
+      await saveEntries();
+      renderStats();
+      renderList();
+      toast("Registro eliminado.");
+    });
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    const which = tab.getAttribute("data-tab");
+    document.getElementById("view-registrar").style.display = which === "entrada" ? "block" : "none";
+    document.getElementById("view-salida").style.display = which === "salida" ? "block" : "none";
+    document.getElementById("view-listado").style.display = which === "listado" ? "block" : "none";
+    if(which === "salida"){ renderSalidas(); }
+    if(which === "listado"){ renderList(); }
+  });
+});
+
+document.getElementById("f-categoria").addEventListener("change", actualizarCamposCondicionales);
+document.getElementById("f-motivo").addEventListener("change", actualizarCamposCondicionales);
+document.getElementById("f-vigencia").addEventListener("change", ()=>{
+  const v = document.getElementById("f-vigencia").value;
+  document.getElementById("wrap-fecha-venc").style.display = v === "fecha" ? "block" : "none";
+});
+
+function actualizarCamposCondicionales(){
+  const cat = document.getElementById("f-categoria").value;
+  const esVisita = cat === "Visita";
+  document.getElementById("wrap-motivo").style.display = esVisita ? "block" : "none";
+  const motivo = document.getElementById("f-motivo").value;
+  document.getElementById("wrap-instalacion").style.display = (esVisita && motivo === "deportivas") ? "block" : "none";
+}
+
+function renderSalidas(){
+  const q = document.getElementById("f-buscar-salida").value.trim().toLowerCase();
+  const cont = document.getElementById("lista-salida");
+  let dentro = entries.filter(e => !e.horaSalida);
+  if(q){
+    dentro = dentro.filter(e =>
+      (e.nombre+" "+e.apellido).toLowerCase().includes(q) ||
+      (e.dni||"").includes(q) ||
+      (e.lote||"").toLowerCase().includes(q)
+    );
+  }
+  dentro = dentro.slice().reverse();
+  if(dentro.length === 0){
+    cont.innerHTML = '<div class="empty">No hay nadie registrado como "adentro" en este momento.</div>';
+    return;
+  }
+  cont.innerHTML = dentro.map(e => `
+    <div class="salida-row">
+      <div class="salida-info">
+        <div class="n">${escapeHtml(e.nombre)} ${escapeHtml(e.apellido)}</div>
+        <div class="m">Lote ${escapeHtml(e.lote||'-')} · ${escapeHtml(e.categoria)} · ingresó ${escapeHtml(e.fecha)}</div>
+      </div>
+      <button class="btn-salida-item" data-id="${e.id}">Registrar salida</button>
+    </div>
+  `).join("");
+  cont.querySelectorAll(".btn-salida-item").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const id = btn.getAttribute("data-id");
+      const e = entries.find(x => x.id === id);
+      if(!e) return;
+      const now = new Date();
+      e.horaSalida = now.toLocaleString("es-AR");
+      e.horaSalidaCorta = now.toLocaleDateString("es-AR");
+      await saveEntries();
+      renderStats();
+      renderSalidas();
+      toast(`Salida registrada: ${e.nombre} ${e.apellido}.`);
+    });
+  });
+}
+document.getElementById("f-buscar-salida").addEventListener("input", renderSalidas);
+
+document.querySelectorAll('[data-group="seguro"]').forEach(opt=>{
+  opt.addEventListener("click", ()=>{
+    document.querySelectorAll('[data-group="seguro"]').forEach(o=>o.classList.remove("active"));
+    opt.classList.add("active");
+    seguroVal = opt.getAttribute("data-val");
+  });
+});
+document.querySelectorAll('[data-group="antecedentes"]').forEach(opt=>{
+  opt.addEventListener("click", ()=>{
+    document.querySelectorAll('[data-group="antecedentes"]').forEach(o=>o.classList.remove("active"));
+    opt.classList.add("active");
+    antecedentesVal = opt.getAttribute("data-val");
+  });
+});
+
+let grupoModo = false;
+let grupoContador = 0;
+let grupoNombres = [];
+let escaneoContinuo = false;
+
+document.getElementById("chk-grupo").addEventListener("change", (e)=>{
+  grupoModo = e.target.checked;
+  document.getElementById("grupo-panel").style.display = grupoModo ? "block" : "none";
+  if(grupoModo){
+    grupoContador = 0;
+    grupoNombres = [];
+    actualizarPanelGrupo();
+  }else{
+    escaneoContinuo = false;
+  }
+});
+
+document.getElementById("btn-finalizar-grupo").addEventListener("click", ()=>{
+  grupoModo = false;
+  escaneoContinuo = false;
+  document.getElementById("chk-grupo").checked = false;
+  document.getElementById("grupo-panel").style.display = "none";
+  toast(`Carga grupal finalizada: ${grupoContador} personas registradas.`);
+  limpiarCamposCompartidos();
+});
+
+function actualizarPanelGrupo(){
+  document.getElementById("grupo-contador").textContent = grupoContador;
+  const ultimos = grupoNombres.slice(-5).reverse();
+  document.getElementById("grupo-lista-mini").textContent = ultimos.length
+    ? "Últimos: " + ultimos.join(", ")
+    : "";
+}
+
+function limpiarCamposCompartidos(){
+  document.getElementById("f-lote").value = "";
+  document.getElementById("f-empresa").value = "";
+  document.getElementById("f-autoriza").value = "";
+  document.getElementById("f-obs").value = "";
+  document.getElementById("f-categoria").selectedIndex = 0;
+  document.getElementById("f-vigencia").selectedIndex = 0;
+  document.getElementById("f-fecha-venc").value = "";
+  actualizarCamposCondicionales();
+  document.getElementById("wrap-fecha-venc").style.display = "none";
+  document.querySelectorAll('[data-group="seguro"],[data-group="antecedentes"]').forEach(o=>o.classList.remove("active"));
+  seguroVal = null;
+  antecedentesVal = null;
+}
+
+async function guardarRegistro(){
+  const nombre = document.getElementById("f-nombre").value.trim();
+  const apellido = document.getElementById("f-apellido").value.trim();
+  const lote = document.getElementById("f-lote").value.trim();
+  const categoria = document.getElementById("f-categoria").value;
+  const autoriza = document.getElementById("f-autoriza").value.trim();
+  let ok = true;
+
+  document.getElementById("err-nombre").style.display = "none";
+  document.getElementById("err-lote").style.display = "none";
+  document.getElementById("err-autoriza").style.display = "none";
+
+  if(!nombre || !apellido){
+    document.getElementById("err-nombre").style.display = "block";
+    ok = false;
+  }
+  if(!lote && categoria !== "Visita"){
+    document.getElementById("err-lote").style.display = "block";
+    ok = false;
+  }
+  if(!autoriza){
+    document.getElementById("err-autoriza").style.display = "block";
+    ok = false;
+  }
+  if(!ok) return false;
+
+  const now = new Date();
+  const motivo = categoria === "Visita" ? document.getElementById("f-motivo").value : "";
+  const instalacion = (categoria === "Visita" && motivo === "deportivas") ? document.getElementById("f-instalacion").value : "";
+  const vigencia = document.getElementById("f-vigencia").value;
+  const fechaVenc = vigencia === "fecha" ? document.getElementById("f-fecha-venc").value : "";
+
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    nombre, apellido,
+    dni: document.getElementById("f-dni").value.trim(),
+    lote,
+    empresa: document.getElementById("f-empresa").value.trim(),
+    categoria,
+    motivo: motivo === "ocasional" ? "Visita ocasional" : motivo === "deportivas" ? "Uso de instalaciones deportivas" : "",
+    instalacion,
+    patente: document.getElementById("f-patente").value.trim(),
+    seguro: seguroVal || "no",
+    antecedentes: antecedentesVal || "no",
+    vigencia: {unica:"Única vez", hoy:"Todo el día de hoy", fecha:"Hasta fecha indicada", permanente:"Personal permanente de obra"}[vigencia],
+    autorizadoHasta: fechaVenc,
+    autoriza: document.getElementById("f-autoriza").value.trim(),
+    observaciones: document.getElementById("f-obs").value.trim(),
+    fecha: now.toLocaleString("es-AR"),
+    fechaCorta: now.toLocaleDateString("es-AR"),
+    horaSalida: "",
+    horaSalidaCorta: ""
+  };
+
+  entries.push(entry);
+  await saveEntries();
+  renderStats();
+
+  ["f-nombre","f-apellido","f-dni","f-patente"].forEach(id=>{
+    document.getElementById(id).value = "";
+  });
+
+  if(grupoModo){
+    grupoContador++;
+    grupoNombres.push(nombre + " " + apellido);
+    actualizarPanelGrupo();
+    toast(`Registrada: ${nombre} ${apellido} (${grupoContador} en esta tanda).`);
+  }else{
+    limpiarCamposCompartidos();
+    toast("Entrada registrada.");
+  }
+  return true;
+}
+
+document.getElementById("btn-registrar").addEventListener("click", guardarRegistro);
+
+document.getElementById("f-buscar").addEventListener("input", renderList);
+
+
+document.getElementById("btn-exportar").addEventListener("click", ()=>{
+  if(entries.length === 0){
+    toast("No hay registros para exportar.");
+    return;
+  }
+  const label = document.getElementById("export-label");
+  label.textContent = "Generando...";
+  try{
+    const rows = entries.map(e => ({
+      "Fecha y hora ingreso": e.fecha,
+      "Hora salida": e.horaSalida || "",
+      "Nombre": e.nombre,
+      "Apellido": e.apellido,
+      "DNI": e.dni,
+      "Lote / UF": e.lote,
+      "Empresa / Contratista": e.empresa,
+      "Categoría": e.categoria,
+      "Motivo de visita": e.motivo || "",
+      "Instalación": e.instalacion || "",
+      "Patente": e.patente,
+      "Seguro vigente": e.seguro === "si" ? "Sí" : "No",
+      "Antecedentes presentados": e.antecedentes === "si" ? "Sí" : "No",
+      "Vigencia autorización": e.vigencia || "",
+      "Autorizado hasta": e.autorizadoHasta || "",
+      "Autoriza": e.autoriza,
+      "Observaciones": e.observaciones
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      {wch:18},{wch:18},{wch:16},{wch:16},{wch:12},{wch:10},
+      {wch:22},{wch:16},{wch:20},{wch:14},{wch:12},{wch:14},
+      {wch:20},{wch:22},{wch:14},{wch:20},{wch:26}
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Control de Accesos");
+    const fname = "Control_Accesos_Carabassa_" + new Date().toISOString().slice(0,10) + ".xlsx";
+    XLSX.writeFile(wb, fname);
+    toast("Planilla descargada.");
+  }catch(e){
+    toast("No se pudo generar la planilla.");
+  }
+  label.textContent = "Descargar planilla Excel";
+});
+
+let scanStream = null;
+let scanRAF = null;
+
+function tieneSoporteEscaneo(){
+  return ("BarcodeDetector" in window);
+}
+
+async function abrirEscaneo(){
+  const errBox = document.getElementById("err-scan");
+  errBox.style.display = "none";
+
+  if(!tieneSoporteEscaneo()){
+    errBox.textContent = "Este navegador no puede escanear el código. Usá Chrome en Android, o cargá los datos a mano.";
+    errBox.style.display = "block";
+    return;
+  }
+
+  const overlay = document.getElementById("scan-overlay");
+  const video = document.getElementById("scan-video");
+  overlay.style.display = "flex";
+
+  try{
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = scanStream;
+
+    const detector = new BarcodeDetector({ formats: ["pdf417"] });
+
+    const loop = async ()=>{
+      if(!scanStream) return;
+      try{
+        const codes = await detector.detect(video);
+        if(codes && codes.length > 0){
+          procesarCodigoDNI(codes[0].rawValue);
+          cerrarEscaneo();
+          return;
+        }
+      }catch(e){}
+      scanRAF = requestAnimationFrame(loop);
+    };
+    scanRAF = requestAnimationFrame(loop);
+
+  }catch(e){
+    errBox.textContent = "No se pudo acceder a la cámara. Revisá los permisos e intentá de nuevo.";
+    errBox.style.display = "block";
+    cerrarEscaneo();
+  }
+}
+
+function cerrarEscaneo(manual){
+  document.getElementById("scan-overlay").style.display = "none";
+  if(scanRAF){ cancelAnimationFrame(scanRAF); scanRAF = null; }
+  if(scanStream){
+    scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+  }
+  if(manual){ escaneoContinuo = false; }
+}
+
+async function procesarCodigoDNI(raw){
+  const partes = String(raw).split("@");
+  if(partes.length >= 5){
+    document.getElementById("f-apellido").value = (partes[1] || "").trim();
+    document.getElementById("f-nombre").value = (partes[2] || "").trim();
+    document.getElementById("f-dni").value = (partes[4] || "").trim();
+
+    if(grupoModo){
+      const guardado = await guardarRegistro();
+      if(guardado && escaneoContinuo){
+        setTimeout(abrirEscaneo, 900);
+      }
+    }else{
+      toast("Datos leídos del DNI. Revisalos antes de registrar.");
+    }
+  }else{
+    toast("Se leyó el código pero no se pudo interpretar. Cargá los datos a mano.");
+  }
+}
+
+document.getElementById("btn-escanear").addEventListener("click", ()=>{
+  if(grupoModo && !document.getElementById("f-autoriza").value.trim()){
+    document.getElementById("err-autoriza").style.display = "block";
+    toast("Completá quién autoriza antes de empezar a escanear.");
+    return;
+  }
+  if(grupoModo){ escaneoContinuo = true; }
+  abrirEscaneo();
+});
+document.getElementById("btn-cancelar-scan").addEventListener("click", ()=>{ cerrarEscaneo(true); });
+
+const CODIGO_ACCESO = "B1629";
+
+function verificarBloqueo(){
+  const desbloqueado = localStorage.getItem("acceso-desbloqueado") === "si";
+  if(desbloqueado){
+    document.getElementById("lock-overlay").style.display = "none";
+    loadEntries();
+  }
+}
+
+document.getElementById("btn-desbloquear").addEventListener("click", intentarDesbloquear);
+document.getElementById("lock-input").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter"){ intentarDesbloquear(); }
+});
+
+function intentarDesbloquear(){
+  const val = document.getElementById("lock-input").value.trim();
+  if(val.toUpperCase() === CODIGO_ACCESO.toUpperCase()){
+    localStorage.setItem("acceso-desbloqueado", "si");
+    document.getElementById("lock-overlay").style.display = "none";
+    loadEntries();
+  }else{
+    document.getElementById("lock-error").style.display = "block";
+    document.getElementById("lock-input").value = "";
+  }
+}
+
+function cerrarSesion(){
+  localStorage.removeItem("acceso-desbloqueado");
+  document.getElementById("lock-input").value = "";
+  document.getElementById("lock-error").style.display = "none";
+  document.getElementById("lock-overlay").style.display = "flex";
+  toast("Sesión cerrada.");
+}
+document.getElementById("btn-cerrar-sesion").addEventListener("click", cerrarSesion);
+
+verificarBloqueo();
+</script>
+
+</body>
+</html>
